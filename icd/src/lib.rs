@@ -20,6 +20,11 @@ pub enum LedState {
     On,
 }
 
+#[derive(Debug, Serialize, Deserialize, Schema)]
+pub struct Display<'a> {
+    pub text: &'a str,
+}
+
 // ---
 
 // Endpoints spoken by our device
@@ -34,6 +39,7 @@ endpoints! {
     | SleepEndpoint             | SleepMillis   | SleptMillis           | "template/sleep"              |
     | SetLedEndpoint            | LedState      | ()                    | "template/led/set"            |
     | GetLedEndpoint            | ()            | LedState              | "template/led/get"            |
+    // | SetDisplayTextEndpoint    | Display            | ()              | "template/display/set"        |
 }
 
 // incoming topics handled by our device

@@ -7,17 +7,22 @@ use embassy_executor::Spawner;
 use embassy_rp::{
     bind_interrupts,
     block::ImageDef,
-    gpio::{Level, Output},
-    peripherals::USB,
+    gpio::{Input, Level, Output, Pull},
+    peripherals::{SPI0, USB},
+    spi::{self, Spi},
     usb,
 };
+use embassy_sync::{blocking_mutex::raw::NoopRawMutex, mutex::Mutex};
 use embassy_time::{Duration, Instant, Ticker};
 use embassy_usb::{Config, UsbDevice};
+use handlers::run_the_display;
 use postcard_rpc::{
     sender_fmt,
     server::{Dispatch, Sender, Server},
 };
 use static_cell::StaticCell;
+
+type Spi0Bus = Mutex<NoopRawMutex, Spi<'static, SPI0, spi::Async>>;
 
 bind_interrupts!(pub struct Irqs {
     USBCTRL_IRQ => usb::InterruptHandler<USB>;
@@ -45,10 +50,9 @@ pub static PICOTOOL_ENTRIES: [embassy_rp::binary_info::EntryAddr; 4] = [
 
 fn usb_config(serial: &'static str) -> Config<'static> {
     let mut config = Config::new(0x16c0, 0x27DD);
-    // config.manufacturer = Some("Sunny Brooke Development");
-    // config.product = Some("rusty-badger-2350");
-    config.manufacturer = Some("OneVariable");
-    config.product = Some("poststation-pico");
+    config.manufacturer = Some("Sunny Brooke Development");
+    config.product = Some("rusty-badger-2350");
+
     config.max_power = 100;
     config.max_packet_size_0 = 64;
     config.serial_number = Some(serial);
@@ -68,21 +72,10 @@ async fn main(spawner: Spawner) {
     // SYSTEM INIT
     info!("Start");
     let mut p = embassy_rp::init(Default::default());
-    let mut led = Output::new(p.PIN_25, Level::Low);
+    let led = Output::new(p.PIN_25, Level::Low);
 
-    // let mut user_led = Output::new(p.PIN_25, Level::Low);
-
-    // user_led.set_high();
-    static SERIAL_STRING: StaticCell<[u8; 16]> = StaticCell::new();
-
-    let mut ser_buf = [b' '; 16];
     //Rp 2350 does not have a embassy function to get the flash id for now so doing a static serial number
     let static_serial_number = "12345678";
-
-    // ser_buf.copy_from_slice(static_serial_number.as_bytes());
-    // let ser_buf = SERIAL_STRING.init(ser_buf);
-
-    // let ser_buf = core::str::from_utf8(ser_buf.as_slice()).unwrap();
 
     // USB/RPC INIT
     let driver = usb::Driver::new(p.USB, Irqs);
@@ -90,11 +83,35 @@ async fn main(spawner: Spawner) {
         app::PBUFS.take();
     let config = usb_config(static_serial_number);
 
+    //Display setup
+    let miso = p.PIN_16;
+    let mosi = p.PIN_19;
+    let clk = p.PIN_18;
+
+    let dc = Output::new(p.PIN_20, Level::Low);
+    let cs = Output::new(p.PIN_17, Level::High);
+    let busy = Input::new(p.PIN_26, Pull::Up);
+    let reset = Output::new(p.PIN_21, Level::Low);
+
+    let delay: Duration = Duration::from_secs(3);
+    let spi = Spi::new(
+        p.SPI0,
+        clk,
+        mosi,
+        miso,
+        p.DMA_CH1,
+        p.DMA_CH2,
+        spi::Config::default(),
+    );
+    static SPI_BUS: StaticCell<Spi0Bus> = StaticCell::new();
+    let spi_bus = SPI_BUS.init(Mutex::new(spi));
+    spawner.must_spawn(run_the_display(spi_bus, cs, dc, busy, reset));
+
     let context = app::Context {
+        //TODO pretty sure i can remove this unique_id its just for a demo
         unique_id: 123,
-        // led,
+        led,
     };
-    led.set_high();
 
     let (device, tx_impl, rx_impl) =
         app::STORAGE.init_poststation(driver, config, pbufs.tx_buf.as_mut_slice());

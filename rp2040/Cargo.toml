@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+embassy-embedded-hal = { version = "0.2.0", features = ["defmt"] }
 cortex-m = { version = "0.7.6", features = ["inline-asm"] }
 embassy-executor = { version = "0.6.0", features = [
     "task-arena-size-32768",
@@ -41,6 +42,15 @@ template-icd = { path = "../icd" }
 critical-section = "1.2.0"
 embassy-usb-logger = { version = "0.2.0", git = "https://github.com/embassy-rs/embassy.git", rev = "227e073fca97bcbcec42d9705e0a8ef19fc433b5" }
 log = "0.4.22"
+uc8151 = { git = "https://github.com/9names/uc8151-rs.git", features = [
+    "graphics",
+] }
+embedded-graphics = "0.8.1"
+embedded-text = "0.7.2"
+embedded-hal-1 = { package = "embedded-hal", version = "1.0" }
+embedded-hal-async = "1.0"
+embedded-hal-bus = { version = "0.1", features = ["async"] }
+heapless = { version = "0.8", features = ["serde"] }
 
 [profile.release]
 debug = 2

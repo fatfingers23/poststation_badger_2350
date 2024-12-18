@@ -23,7 +23,7 @@ pub struct Context {
     /// We'll use this unique ID to identify ourselves to the poststation
     /// server. This should be unique per device.
     pub unique_id: u64,
-    // pub led: Output<'static>,
+    pub led: Output<'static>,
 }
 
 impl SpawnContext for Context {
