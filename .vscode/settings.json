@@ -1,0 +1,16 @@
+{
+    "rust-analyzer.check.allTargets": false,
+    "rust-analyzer.check.noDefaultFeatures": true,
+    "rust-analyzer.cargo.noDefaultFeatures": true,
+    "rust-analyzer.showUnlinkedFileNotification": false,
+    // Uncomment the target of your chip.
+    "rust-analyzer.cargo.target": "thumbv6m-none-eabi",
+    //"rust-analyzer.cargo.target": "thumbv7m-none-eabi",
+    // "rust-analyzer.cargo.target": "thumbv7em-none-eabi",
+    //"rust-analyzer.cargo.target": "thumbv7em-none-eabihf",
+    //"rust-analyzer.cargo.target": "thumbv8m.main-none-eabihf",
+    "rust-analyzer.linkedProjects": [
+        "rp2040/Cargo.toml",
+        "icd/Cargo.toml"
+    ],
+}
