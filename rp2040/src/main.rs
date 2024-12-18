@@ -4,10 +4,19 @@
 use app::AppTx;
 use defmt::info;
 use embassy_executor::Spawner;
-use embassy_rp::{bind_interrupts, gpio::{Level, Output}, peripherals::USB, usb};
+use embassy_rp::{
+    bind_interrupts,
+    block::ImageDef,
+    gpio::{Level, Output},
+    peripherals::USB,
+    usb,
+};
 use embassy_time::{Duration, Instant, Ticker};
 use embassy_usb::{Config, UsbDevice};
-use postcard_rpc::{sender_fmt, server::{Dispatch, Sender, Server}};
+use postcard_rpc::{
+    sender_fmt,
+    server::{Dispatch, Sender, Server},
+};
 use static_cell::StaticCell;
 
 bind_interrupts!(pub struct Irqs {
@@ -19,19 +28,37 @@ use {defmt_rtt as _, panic_probe as _};
 pub mod app;
 pub mod handlers;
 
+#[link_section = ".start_block"]
+#[used]
+pub static IMAGE_DEF: ImageDef = ImageDef::secure_exe();
+
+// // Program metadata for `picotool info`.
+// // This isn't needed, but it's recomended to have these minimal entries.
+#[link_section = ".bi_entries"]
+#[used]
+pub static PICOTOOL_ENTRIES: [embassy_rp::binary_info::EntryAddr; 4] = [
+    embassy_rp::binary_info::rp_program_name!(c"Badger 2350"),
+    embassy_rp::binary_info::rp_program_description!(c"Showcases the Badger 2350 with Poststation"),
+    embassy_rp::binary_info::rp_cargo_version!(),
+    embassy_rp::binary_info::rp_program_build_attribute!(),
+];
 
 fn usb_config(serial: &'static str) -> Config<'static> {
     let mut config = Config::new(0x16c0, 0x27DD);
+    // config.manufacturer = Some("Sunny Brooke Development");
+    // config.product = Some("rusty-badger-2350");
     config.manufacturer = Some("OneVariable");
     config.product = Some("poststation-pico");
+    config.max_power = 100;
+    config.max_packet_size_0 = 64;
     config.serial_number = Some(serial);
 
     // Required for windows compatibility.
     // https://developer.nordicsemi.com/nRF_Connect_SDK/doc/1.9.1/kconfig/CONFIG_CDC_ACM_IAD.html#help
-    config.device_class = 0xEF;
-    config.device_sub_class = 0x02;
-    config.device_protocol = 0x01;
-    config.composite_with_iads = true;
+    // config.device_class = 0xEF;
+    // config.device_sub_class = 0x02;
+    // config.device_protocol = 0x01;
+    // config.composite_with_iads = true;
 
     config
 }
@@ -41,40 +68,40 @@ async fn main(spawner: Spawner) {
     // SYSTEM INIT
     info!("Start");
     let mut p = embassy_rp::init(Default::default());
-    // Obtain the flash ID
-    let unique_id = unique_id::get_unique_id(&mut p.FLASH).unwrap();
+    let mut led = Output::new(p.PIN_25, Level::Low);
+
+    // let mut user_led = Output::new(p.PIN_25, Level::Low);
+
+    // user_led.set_high();
     static SERIAL_STRING: StaticCell<[u8; 16]> = StaticCell::new();
+
     let mut ser_buf = [b' '; 16];
-    // This is a simple number-to-hex formatting
-    unique_id
-        .to_be_bytes()
-        .iter()
-        .zip(ser_buf.chunks_exact_mut(2))
-        .for_each(|(b, chs)| {
-            let mut b = *b;
-            for c in chs {
-                *c = match b >> 4 {
-                    v @ 0..10 => b'0' + v,
-                    v @ 10..16 => b'A' + (v - 10),
-                    _ => b'X',
-                };
-                b <<= 4;
-            }
-        });
-    let ser_buf = SERIAL_STRING.init(ser_buf);
-    let ser_buf = core::str::from_utf8(ser_buf.as_slice()).unwrap();
+    //Rp 2350 does not have a embassy function to get the flash id for now so doing a static serial number
+    let static_serial_number = "12345678";
+
+    // ser_buf.copy_from_slice(static_serial_number.as_bytes());
+    // let ser_buf = SERIAL_STRING.init(ser_buf);
+
+    // let ser_buf = core::str::from_utf8(ser_buf.as_slice()).unwrap();
 
     // USB/RPC INIT
     let driver = usb::Driver::new(p.USB, Irqs);
-    let pbufs = app::PBUFS.take();
-    let config = usb_config(ser_buf);
-    let led = Output::new(p.PIN_25, Level::Low);
+    let pbufs: &mut postcard_rpc::server::impls::embassy_usb_v0_3::PacketBuffers =
+        app::PBUFS.take();
+    let config = usb_config(static_serial_number);
 
-    let context = app::Context { unique_id, led };
+    let context = app::Context {
+        unique_id: 123,
+        // led,
+    };
+    led.set_high();
 
-    let (device, tx_impl, rx_impl) = app::STORAGE.init_poststation(driver, config, pbufs.tx_buf.as_mut_slice());
+    let (device, tx_impl, rx_impl) =
+        app::STORAGE.init_poststation(driver, config, pbufs.tx_buf.as_mut_slice());
+
     let dispatcher = app::MyApp::new(context, spawner.into());
     let vkk = dispatcher.min_key_len();
+
     let mut server: app::AppServer = Server::new(
         tx_impl,
         rx_impl,
@@ -82,6 +109,7 @@ async fn main(spawner: Spawner) {
         dispatcher,
         vkk,
     );
+
     let sender = server.sender();
     // We need to spawn the USB task so that USB messages are handled by
     // embassy-usb
@@ -110,25 +138,5 @@ pub async fn logging_task(sender: Sender<AppTx>) {
     loop {
         ticker.next().await;
         let _ = sender_fmt!(sender, "Uptime: {:?}", start.elapsed()).await;
-    }
-}
-
-/// Helper to get unique ID from flash
-mod unique_id {
-    use embassy_rp::{
-        flash::{Blocking, Flash},
-        peripherals::FLASH,
-    };
-
-    /// This function retrieves the unique ID of the external flash memory.
-    ///
-    /// The RP2040 has no internal unique ID register, but most flash chips do,
-    /// So we use that instead.
-    pub fn get_unique_id(flash: &mut FLASH) -> Option<u64> {
-        let mut flash: Flash<'_, FLASH, Blocking, { 16 * 1024 * 1024 }> =
-            Flash::new_blocking(flash);
-        let mut id = [0u8; core::mem::size_of::<u64>()];
-        flash.blocking_unique_id(&mut id).ok()?;
-        Some(u64::from_be_bytes(id))
     }
 }
