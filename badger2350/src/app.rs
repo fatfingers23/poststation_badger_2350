@@ -1,6 +1,10 @@
 //! A basic postcard-rpc/poststation-compatible application
 
 use crate::handlers::{get_led, picoboot_reset, set_led, sleep_handler, unique_id};
+use badger_2350_icd::{
+    GetLedEndpoint, GetUniqueIdEndpoint, RebootToPicoBoot, SetLedEndpoint, SleepEndpoint,
+};
+use badger_2350_icd::{ENDPOINT_LIST, TOPICS_IN_LIST, TOPICS_OUT_LIST};
 use embassy_rp::{gpio::Output, peripherals::USB, usb};
 use embassy_sync::blocking_mutex::raw::ThreadModeRawMutex;
 use postcard_rpc::server::impls::embassy_usb_v0_3::{
@@ -12,10 +16,6 @@ use postcard_rpc::{
     server::{Server, SpawnContext},
 };
 use static_cell::ConstStaticCell;
-use template_icd::{
-    GetLedEndpoint, GetUniqueIdEndpoint, RebootToPicoBoot, SetLedEndpoint, SleepEndpoint,
-};
-use template_icd::{ENDPOINT_LIST, TOPICS_IN_LIST, TOPICS_OUT_LIST};
 
 /// Context contains the data that we will pass (as a mutable reference)
 /// to each endpoint or topic handler

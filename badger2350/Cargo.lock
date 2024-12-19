@@ -60,6 +60,48 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7b7e4c2464d97fe331d41de9d5db0def0a96f4d823b8b32a2efd503578988973"
 
 [[package]]
+name = "badger-2350"
+version = "0.1.0"
+dependencies = [
+ "badger-2350-icd",
+ "cortex-m",
+ "cortex-m-rt",
+ "critical-section",
+ "defmt",
+ "defmt-rtt",
+ "embassy-embedded-hal",
+ "embassy-executor",
+ "embassy-rp",
+ "embassy-sync",
+ "embassy-time",
+ "embassy-usb",
+ "embassy-usb-logger",
+ "embedded-graphics",
+ "embedded-hal 1.0.0",
+ "embedded-hal-async",
+ "embedded-hal-bus",
+ "embedded-text",
+ "heapless 0.8.0",
+ "log",
+ "panic-probe",
+ "portable-atomic",
+ "postcard",
+ "postcard-rpc",
+ "postcard-schema",
+ "static_cell",
+ "uc8151",
+]
+
+[[package]]
+name = "badger-2350-icd"
+version = "0.1.0"
+dependencies = [
+ "postcard-rpc",
+ "postcard-schema",
+ "serde",
+]
+
+[[package]]
 name = "bare-metal"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1467,48 +1509,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
-]
-
-[[package]]
-name = "template-icd"
-version = "0.1.0"
-dependencies = [
- "postcard-rpc",
- "postcard-schema",
- "serde",
-]
-
-[[package]]
-name = "template-rp2040"
-version = "0.1.0"
-dependencies = [
- "cortex-m",
- "cortex-m-rt",
- "critical-section",
- "defmt",
- "defmt-rtt",
- "embassy-embedded-hal",
- "embassy-executor",
- "embassy-rp",
- "embassy-sync",
- "embassy-time",
- "embassy-usb",
- "embassy-usb-logger",
- "embedded-graphics",
- "embedded-hal 1.0.0",
- "embedded-hal-async",
- "embedded-hal-bus",
- "embedded-text",
- "heapless 0.8.0",
- "log",
- "panic-probe",
- "portable-atomic",
- "postcard",
- "postcard-rpc",
- "postcard-schema",
- "static_cell",
- "template-icd",
- "uc8151",
 ]
 
 [[package]]

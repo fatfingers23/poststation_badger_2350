@@ -1,5 +1,5 @@
 [package]
-name = "template-rp2040"
+name = "badger-2350"
 version = "0.1.0"
 edition = "2021"
 
@@ -38,7 +38,7 @@ cortex-m-rt = "0.7.0"
 defmt = "0.3"
 defmt-rtt = "0.4"
 static_cell = "2.1"
-template-icd = { path = "../icd" }
+badger-2350-icd = { path = "../icd" }
 critical-section = "1.2.0"
 embassy-usb-logger = { version = "0.2.0", git = "https://github.com/embassy-rs/embassy.git", rev = "227e073fca97bcbcec42d9705e0a8ef19fc433b5" }
 log = "0.4.22"

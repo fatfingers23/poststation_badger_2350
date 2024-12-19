@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "use-std"), no_std)]
 
 use postcard_rpc::{endpoints, topics, TopicDirection};
-use postcard_schema::Schema;
+use postcard_schema::{schema::DataModelType, Schema};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Schema)]
@@ -21,8 +21,8 @@ pub enum LedState {
 }
 
 #[derive(Debug, Serialize, Deserialize, Schema)]
-pub struct Display<'a> {
-    pub text: &'a str,
+pub struct Display {
+    // pub text: String,
 }
 
 // ---

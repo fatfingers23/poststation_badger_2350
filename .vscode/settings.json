@@ -5,7 +5,7 @@
     "rust-analyzer.showUnlinkedFileNotification": false,
     "rust-analyzer.cargo.target": "thumbv8m.main-none-eabihf",
     "rust-analyzer.linkedProjects": [
-        "rp2040/Cargo.toml",
+        "badger2350/Cargo.toml",
         "icd/Cargo.toml"
     ],
 }

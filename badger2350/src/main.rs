@@ -108,7 +108,7 @@ async fn main(spawner: Spawner) {
     spawner.must_spawn(run_the_display(spi_bus, cs, dc, busy, reset));
 
     let context = app::Context {
-        //TODO pretty sure i can remove this unique_id its just for a demo
+        //TODO should be a real unique id
         unique_id: 123,
         led,
     };

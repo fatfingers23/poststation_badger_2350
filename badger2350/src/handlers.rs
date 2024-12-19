@@ -1,3 +1,4 @@
+use badger_2350_icd::{LedState, SleepEndpoint, SleepMillis, SleptMillis};
 use core::cell::RefCell;
 use core::sync::atomic::{compiler_fence, Ordering};
 use defmt::{error, info};
@@ -22,7 +23,6 @@ use embedded_text::{
 use heapless::String;
 use portable_atomic::AtomicBool;
 use postcard_rpc::{header::VarHeader, server::Sender};
-use template_icd::{LedState, SleepEndpoint, SleepMillis, SleptMillis};
 use uc8151::asynch::Uc8151;
 use uc8151::{LUT, WIDTH};
 
