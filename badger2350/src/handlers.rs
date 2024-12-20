@@ -1,4 +1,4 @@
-use badger_2350_icd::{LedState, SleepEndpoint, SleepMillis, SleptMillis};
+use badger_2350_icd::{Display, LedState, SleepEndpoint, SleepMillis, SleptMillis};
 use core::cell::RefCell;
 use core::sync::atomic::{compiler_fence, Ordering};
 use defmt::{error, info};
@@ -15,11 +15,8 @@ use embedded_graphics::{
     prelude::*,
     primitives::{PrimitiveStyle, Rectangle},
 };
-use embedded_text::{
-    alignment::HorizontalAlignment,
-    style::{HeightMode, TextBoxStyleBuilder},
-    TextBox,
-};
+use postcard_rpc::sender_fmt;
+
 use heapless::String;
 use portable_atomic::AtomicBool;
 use postcard_rpc::{header::VarHeader, server::Sender};
@@ -33,6 +30,8 @@ use crate::{
 pub static DISPLAY_HAS_CHANGED: AtomicBool = AtomicBool::new(false);
 pub static SOME_TEXT: blocking_mutex::Mutex<CriticalSectionRawMutex, RefCell<String<120>>> =
     blocking_mutex::Mutex::new(RefCell::new(String::<120>::new()));
+
+// const TEST_IMAGE: &[u8] = &[];
 
 /// This is an example of a BLOCKING handler.
 pub fn unique_id(context: &mut Context, _header: VarHeader, _arg: ()) -> u64 {
@@ -75,10 +74,12 @@ pub fn get_led(context: &mut Context, _header: VarHeader, _arg: ()) -> LedState 
     }
 }
 
-pub fn set_text(_context: &mut Context, _header: VarHeader, arg: &str) {
+pub async fn set_text(_context: &mut Context, _header: VarHeader, arg: Display) {
+    // let _ = sender_fmt!(sender, "Setting Text: {:?}", arg.text.clone().as_str()).await;
+
     SOME_TEXT.lock(|ip| {
         ip.borrow_mut().clear();
-        ip.borrow_mut().push_str(arg).unwrap();
+        ip.borrow_mut().push_str(&arg.text).unwrap();
     });
     DISPLAY_HAS_CHANGED.store(true, Ordering::Relaxed);
 }
@@ -117,6 +118,7 @@ pub async fn run_the_display(
     dc: Output<'static>,
     busy: Input<'static>,
     reset: Output<'static>,
+    sender: Sender<AppTx>,
 ) {
     let spi_device = SpiDevice::new(&spi_bus, cs);
     let mut display = Uc8151::new(spi_device, dc, busy, reset, Delay);
@@ -124,17 +126,12 @@ pub async fn run_the_display(
     display.reset().await;
 
     // Initialise display. Using the default LUT speed setting
-    let test = display.setup(LUT::Medium).await;
+    let test = display.setup(LUT::Fast).await;
     if test.is_err() {
         error!("Display setup failed");
     }
 
     let character_style = MonoTextStyle::new(&FONT_9X18_BOLD, BinaryColor::Off);
-    let textbox_style = TextBoxStyleBuilder::new()
-        .height_mode(HeightMode::FitToText)
-        .alignment(HorizontalAlignment::Left)
-        .paragraph_spacing(6)
-        .build();
 
     // Bounding box for our text. Fill it with the opposite color so we can read the text.
     let static_text_bounds = Rectangle::new(Point::new(10, 50), Size::new(WIDTH, 0));
@@ -154,8 +151,12 @@ pub async fn run_the_display(
 
     loop {
         if DISPLAY_HAS_CHANGED.load(Ordering::Relaxed) {
+            let _ = display.clear(BinaryColor::Off);
+
             let some_text = SOME_TEXT.lock(|ip| ip.borrow().clone());
             let top_box = Rectangle::new(Point::new(0, 0), Size::new(WIDTH, 24));
+            let _ = sender_fmt!(sender, "Setting text: {:?}", some_text).await;
+
             top_box
                 .into_styled(
                     PrimitiveStyleBuilder::default()
@@ -173,6 +174,11 @@ pub async fn run_the_display(
 
             // Draw the counter text box.
             let _ = display.partial_update(top_box.try_into().unwrap()).await;
+
+            // let tga: Bmp<BinaryColor> = Bmp::from_slice(&test_image).unwrap();
+            // let image = Image::new(&tga, Point::new(0, 0));
+            // let _ = image.draw(&mut display);
+            // let _ = display.update().await;
             DISPLAY_HAS_CHANGED.store(false, Ordering::Relaxed);
         }
         Timer::after(Duration::from_millis(100)).await;

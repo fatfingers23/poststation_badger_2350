@@ -1,8 +1,9 @@
 //! A basic postcard-rpc/poststation-compatible application
 
-use crate::handlers::{get_led, picoboot_reset, set_led, sleep_handler, unique_id};
+use crate::handlers::{get_led, picoboot_reset, set_led, set_text, sleep_handler, unique_id};
 use badger_2350_icd::{
-    GetLedEndpoint, GetUniqueIdEndpoint, RebootToPicoBoot, SetLedEndpoint, SleepEndpoint,
+    GetLedEndpoint, GetUniqueIdEndpoint, RebootToPicoBoot, SetDisplayTextEndpoint, SetLedEndpoint,
+    SleepEndpoint,
 };
 use badger_2350_icd::{ENDPOINT_LIST, TOPICS_IN_LIST, TOPICS_OUT_LIST};
 use embassy_rp::{gpio::Output, peripherals::USB, usb};
@@ -112,6 +113,7 @@ define_dispatch! {
         | SleepEndpoint             | spawn     | sleep_handler                 |
         | SetLedEndpoint            | blocking  | set_led                       |
         | GetLedEndpoint            | blocking  | get_led                       |
+        | SetDisplayTextEndpoint    | async     | set_text                      |
     };
 
     // Topics IN are messages we receive from the client, but that we do not reply

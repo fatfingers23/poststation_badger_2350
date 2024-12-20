@@ -89,6 +89,7 @@ dependencies = [
  "postcard-rpc",
  "postcard-schema",
  "static_cell",
+ "tinybmp",
  "uc8151",
 ]
 
@@ -96,6 +97,7 @@ dependencies = [
 name = "badger-2350-icd"
 version = "0.1.0"
 dependencies = [
+ "heapless 0.8.0",
  "postcard-rpc",
  "postcard-schema",
  "serde",
@@ -1183,6 +1185,7 @@ version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f7532d2f032349d41dc760c9fe5247fcb5660c689caf4884822603983a5a9a66"
 dependencies = [
+ "heapless 0.8.0",
  "postcard-derive",
  "serde",
 ]
@@ -1558,6 +1561,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2c9d3793400a45f954c52e73d068316d76b6f4e36977e3fcebb13a2721e80237"
 dependencies = [
  "crunchy",
+]
+
+[[package]]
+name = "tinybmp"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "df43af2cb7b369009aa14144959bb4f2720ab62034c9073242f2d3a186c2edb6"
+dependencies = [
+ "embedded-graphics",
 ]
 
 [[package]]

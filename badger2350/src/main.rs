@@ -71,7 +71,7 @@ fn usb_config(serial: &'static str) -> Config<'static> {
 async fn main(spawner: Spawner) {
     // SYSTEM INIT
     info!("Start");
-    let mut p = embassy_rp::init(Default::default());
+    let p = embassy_rp::init(Default::default());
     let led = Output::new(p.PIN_25, Level::Low);
 
     //Rp 2350 does not have a embassy function to get the flash id for now so doing a static serial number
@@ -93,7 +93,6 @@ async fn main(spawner: Spawner) {
     let busy = Input::new(p.PIN_26, Pull::Up);
     let reset = Output::new(p.PIN_21, Level::Low);
 
-    let delay: Duration = Duration::from_secs(3);
     let spi = Spi::new(
         p.SPI0,
         clk,
@@ -105,7 +104,6 @@ async fn main(spawner: Spawner) {
     );
     static SPI_BUS: StaticCell<Spi0Bus> = StaticCell::new();
     let spi_bus = SPI_BUS.init(Mutex::new(spi));
-    spawner.must_spawn(run_the_display(spi_bus, cs, dc, busy, reset));
 
     let context = app::Context {
         //TODO should be a real unique id
@@ -131,7 +129,8 @@ async fn main(spawner: Spawner) {
     // We need to spawn the USB task so that USB messages are handled by
     // embassy-usb
     spawner.must_spawn(usb_task(device));
-    spawner.must_spawn(logging_task(sender));
+    // spawner.must_spawn(logging_task(sender.clone()));
+    spawner.must_spawn(run_the_display(spi_bus, cs, dc, busy, reset, sender));
 
     // Begin running!
     loop {
@@ -147,13 +146,12 @@ pub async fn usb_task(mut usb: UsbDevice<'static, app::AppDriver>) {
     usb.run().await;
 }
 
-/// This task is a "sign of life" logger
-#[embassy_executor::task]
-pub async fn logging_task(sender: Sender<AppTx>) {
-    let mut ticker = Ticker::every(Duration::from_secs(3));
-    let start = Instant::now();
-    loop {
-        ticker.next().await;
-        let _ = sender_fmt!(sender, "Uptime: {:?}", start.elapsed()).await;
-    }
-}
+// #[embassy_executor::task]
+// pub async fn logging_task(sender: Sender<AppTx>) {
+//     let mut ticker = Ticker::every(Duration::from_secs(3));
+//     let start = Instant::now();
+//     loop {
+//         ticker.next().await;
+//         let _ = sender_fmt!(sender, "Uptime: {:?}", start.elapsed()).await;
+//     }
+// }

@@ -32,7 +32,7 @@ embassy-usb = { version = "0.3.0", features = ["defmt"] }
 panic-probe = { version = "0.3", features = ["print-defmt"] }
 postcard-rpc = { version = "0.11.0", features = ["embassy-usb-0_3-server"] }
 postcard = { version = "1.1.0" }
-postcard-schema = { version = "0.2.0", features = ["derive"] }
+postcard-schema = { version = "0.2.0", features = ["derive", "heapless-v0_8"] }
 portable-atomic = { version = "1.6.0", features = ["critical-section"] }
 cortex-m-rt = "0.7.0"
 defmt = "0.3"
@@ -51,6 +51,7 @@ embedded-hal-1 = { package = "embedded-hal", version = "1.0" }
 embedded-hal-async = "1.0"
 embedded-hal-bus = { version = "0.1", features = ["async"] }
 heapless = { version = "0.8", features = ["serde"] }
+tinybmp = "0.6.0"
 
 [profile.release]
 debug = 2

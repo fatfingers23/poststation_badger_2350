@@ -1,7 +1,8 @@
 #![cfg_attr(not(feature = "use-std"), no_std)]
 
+use heapless::String;
 use postcard_rpc::{endpoints, topics, TopicDirection};
-use postcard_schema::{schema::DataModelType, Schema};
+use postcard_schema::Schema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Schema)]
@@ -22,7 +23,7 @@ pub enum LedState {
 
 #[derive(Debug, Serialize, Deserialize, Schema)]
 pub struct Display {
-    // pub text: String,
+    pub text: String<128>,
 }
 
 // ---
@@ -39,7 +40,7 @@ endpoints! {
     | SleepEndpoint             | SleepMillis   | SleptMillis           | "template/sleep"              |
     | SetLedEndpoint            | LedState      | ()                    | "template/led/set"            |
     | GetLedEndpoint            | ()            | LedState              | "template/led/get"            |
-    // | SetDisplayTextEndpoint    | Display            | ()              | "template/display/set"        |
+    | SetDisplayTextEndpoint    | Display       | ()                    | "template/display/set"        |
 }
 
 // incoming topics handled by our device
